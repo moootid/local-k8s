@@ -1,0 +1,40 @@
+# postgres-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-config
+  namespace: myapp
+data:
+  POSTGRES_DB: "myapp"
+  POSTGRES_USER: "myapp"
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: postgres-secret
+  namespace: myapp
+type: Opaque
+data:
+  POSTGRES_PASSWORD: WU9VUl9EQl9QQVNTV09SRA==  # TODO: Replace with base64 encoded version of your actual database password
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-scripts
+  namespace: myapp
+data:
+  01-init.sql: |
+    -- Initialize database with required extensions
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    
+    -- You can add more initialization scripts here
+    -- CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+    -- CREATE EXTENSION IF NOT EXISTS "ltree";
+    
+    -- Log the extensions
+    SELECT name, default_version, installed_version 
+    FROM pg_available_extensions 
+    WHERE name IN ('uuid-ossp') 
+    ORDER BY name;

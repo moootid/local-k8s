@@ -1,0 +1,55 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-alerts
+  namespace: monitoring
+data:
+  rules.yml: |
+    groups:
+      - name: service-availability-alerts
+        rules:
+          - alert: ServiceDown
+            expr: up == 0
+            for: 1m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Service {{ $labels.job }} is down"
+              description: "The service {{ $labels.job }} at instance {{ $labels.instance }} has been down for more than 1 minute."
+
+      - name: http-error-alerts
+        rules:
+          - alert: HighHttp5xxErrorRate
+            # This expression combines metrics from all your services
+            expr: |
+              (
+                sum(rate(http_requests_total{status=~"5.*"}[2m])) by (job) / sum(rate(http_requests_total[2m])) by (job) > 0.05
+              ) or (
+                sum(rate(auth_service_http_requests_total{status_code=~"5.*"}[2m])) by (job) / sum(rate(auth_service_http_requests_total[2m])) by (job) > 0.05
+              )
+            for: 2m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High HTTP 5xx Error Rate on {{ $labels.job }}"
+              description: "Service {{ $labels.job }} has an error rate above 5% for the last 2 minutes."
+
+      - name: resource-usage-alerts
+        rules:
+          - alert: HighMemoryUsage
+            expr: '100 * (sum(container_memory_working_set_bytes{namespace="myapp"}) by (pod) / sum(kube_pod_container_resource_limits{resource="memory", namespace="myapp"}) by (pod)) > 85'
+            for: 5m
+            labels:
+              severity: warning
+            annotations:
+              summary: "High Memory Usage for Pod {{ $labels.pod }}"
+              description: "Pod {{ $labels.pod }} in the myapp namespace is using more than 85% of its memory limit."
+
+          - alert: PodFrequentlyRestarting
+            expr: 'rate(kube_pod_container_status_restarts_total{namespace="myapp"}[15m]) * 60 * 5 > 1' # More than 1 restart in 5 minutes
+            for: 15m
+            labels:
+              severity: critical
+            annotations:
+              summary: "Pod {{ $labels.pod }} is frequently restarting"
+              description: "The pod {{ $labels.pod }} has been restarting frequently over the last 15 minutes, which could indicate a crash loop."

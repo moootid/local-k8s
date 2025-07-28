@@ -1,0 +1,32 @@
+# Configuration Template
+# Copy this file to .env or use it as a reference for setting up your environment
+
+# Database Configuration
+DB_PASSWORD=your_actual_database_password_here
+DB_USER=myapp
+DB_NAME=myapp
+DB_HOST=postgres
+DB_PORT=5432
+
+# JWT Configuration
+JWT_SECRET=your_very_secure_jwt_secret_key_here_at_least_32_characters
+
+# AWS Configuration
+AWS_ACCESS_KEY_ID=your_aws_access_key_id_here
+AWS_SECRET_ACCESS_KEY=your_aws_secret_access_key_here
+AWS_DEFAULT_REGION=eu-central-1
+
+# S3 Configuration
+S3_BUCKET=your_s3_bucket_name_here
+
+# Instructions:
+# 1. Copy this file: cp config.template .env
+# 2. Edit .env with your actual values
+# 3. Source it before deployment: source .env
+# 4. Use envsubst to replace placeholders: envsubst < file.yaml | kubectl apply -f -
+
+# Security Notes:
+# - Never commit .env files to version control
+# - Use different credentials for different environments
+# - Rotate credentials regularly
+# - Use minimal required AWS permissions

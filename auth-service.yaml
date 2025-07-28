@@ -1,0 +1,95 @@
+# auth-service.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: auth-service
+  namespace: myapp
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: auth-service
+  template:
+    metadata:
+      labels:
+        app: auth-service
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8080"
+    spec:
+      containers:
+      - name: auth-service
+        image: moootid/auth-service:latest
+        ports:
+        - containerPort: 8080
+        env:
+        - name: PORT
+          value: "8080"
+        - name: DB_HOST
+          value: "postgres"
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_USER
+          value: "myapp"
+        - name: DB_PASSWORD
+          value: "YOUR_DB_PASSWORD"  # TODO: Replace with your actual database password
+        - name: DB_NAME
+          value: "myapp"
+        - name: DB_SSLMODE
+          value: "disable"
+        - name: JWT_SECRET
+          value: "YOUR_JWT_SECRET_KEY"  # TODO: Replace with your actual JWT secret key
+        - name: TRANSCODE_VIDEO_URL
+          value: "http://video-transcoder:4000"
+        - name: ANALYZE_VIDEO_URL
+          value: "http://people-counter:8000"
+        resources:
+          requests:
+            memory: "128Mi"
+            cpu: "100m"
+          limits:
+            memory: "256Mi"
+            cpu: "200m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 8080
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      restartPolicy: Always
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service
+  namespace: myapp
+spec:
+  selector:
+    app: auth-service
+  ports:
+  - port: 80
+    targetPort: 8080
+  type: ClusterIP
+
+---
+# External access
+apiVersion: v1
+kind: Service
+metadata:
+  name: auth-service-external
+  namespace: myapp
+spec:
+  selector:
+    app: auth-service
+  ports:
+  - port: 8080
+    targetPort: 8080
+    nodePort: 30080
+  type: NodePort

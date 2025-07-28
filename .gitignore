@@ -1,0 +1,66 @@
+# Kubernetes sensitive configuration files
+*-secrets.yaml
+*-sensitive.yaml
+.env
+.env.local
+.env.production
+
+# Backup files that might contain sensitive data
+*.bak
+*.backup
+*-backup.*
+
+# IDE/Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Log files
+*.log
+logs/
+
+# Temporary files
+tmp/
+temp/
+.tmp/
+*.tmp
+
+# Helm files with secrets
+values-production.yaml
+values-staging.yaml
+secrets.yaml
+
+# Any file with 'secret' or 'credential' in the name
+*secret*
+*credential*
+*password*
+
+# Kubeconfig files
+kubeconfig
+.kubeconfig
+config-*
+
+# SSL certificates and keys
+*.pem
+*.key
+*.crt
+*.p12
+*.pfx
+
+# Auto-saved files
+*-save.*
+*-bak
+*autosave*
+\#auto_saved_files#
+~*.lck

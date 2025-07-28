@@ -1,0 +1,111 @@
+# 1. Alertmanager Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-config
+  namespace: monitoring
+data:
+  alertmanager.yml: |
+    global:
+      resolve_timeout: 5m
+    route:
+      group_wait: 30s
+      group_interval: 5m
+      repeat_interval: 1h
+      receiver: 'discord-notifications'
+    receivers:
+      - name: 'discord-notifications'
+        webhook_configs:
+          # This URL points to our discord adapter service
+          - url: 'http://alertmanager-discord.monitoring.svc.cluster.local:9094/'
+            send_resolved: true
+---
+# 2. Alertmanager Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager
+  template:
+    metadata:
+      labels:
+        app: alertmanager
+    spec:
+      containers:
+        - name: alertmanager
+          image: prom/alertmanager:v0.27.0
+          args:
+            - "--config.file=/etc/alertmanager/alertmanager.yml"
+          ports:
+            - name: web
+              containerPort: 9093
+          volumeMounts:
+            - name: config-volume
+              mountPath: /etc/alertmanager
+      volumes:
+        - name: config-volume
+          configMap:
+            name: alertmanager-config
+---
+# 3. Alertmanager Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager
+  namespace: monitoring
+spec:
+  selector:
+    app: alertmanager
+  ports:
+    - name: web
+      port: 9093
+      targetPort: 9093
+      nodePort: 30093
+  type: NodePort
+---
+# 4. Discord Adapter Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: alertmanager-discord
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: alertmanager-discord
+  template:
+    metadata:
+      labels:
+        app: alertmanager-discord
+    spec:
+      containers:
+        - name: alertmanager-discord
+          image: jertel/alertmanager-discord:latest
+          env:
+            - name: DISCORD_WEBHOOK
+              valueFrom:
+                secretKeyRef:
+                  name: discord-webhook-secret
+                  key: DISCORD_WEBHOOK
+          ports:
+            - containerPort: 9094
+---
+# 5. Discord Adapter Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: alertmanager-discord
+  namespace: monitoring
+spec:
+  selector:
+    app: alertmanager-discord
+  ports:
+    - port: 9094
+      targetPort: 9094
+  type: ClusterIP
